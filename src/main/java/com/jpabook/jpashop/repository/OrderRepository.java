@@ -96,4 +96,23 @@ public class OrderRepository {
     }
 
 
+    public List<Order> findAllWithMemberDelivery() {
+        return em.createQuery(
+                "select o from Order o" +
+                        " join fetch o.member m" +
+                        " join fetch o.delivery d", Order.class).getResultList();
+    }
+
+    //의존성은 한방향으로만 흘러가야함!!
+    // Repository는 가급적!! ~~~ 순수한 ~~~엔티티를 조회하는 용도로만 사용해야한다.
+    // 이런식으로 DTO가 들어오는 경우는 api 스펙이 repository에 들어온것이나 마찬가지이다.
+    // 하지만 이런식으로 DTO로 최적화 해서  쓰는 경우에는 repository 패키지 밑에 order.query 패키지를 하나 만들어서 DTO와 리파지토리를 넣어 계층을 분리하는 방법도 좋다.
+    // -> 유지보수성이 좋아진다.......
+    public List<OrderSimpleQueryDto> findOrderDtos() {
+        return em.createQuery(
+                 "select new com.jpabook.jpashop.repository.OrderSimpleQueryDto(o.id, m.name, o.orderDate, o.status, d.address) " +
+                        " from Order o" +
+                        " join o.member m" +
+                        " join o.delivery d", OrderSimpleQueryDto.class).getResultList();
+    }
 }
