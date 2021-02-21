@@ -27,8 +27,8 @@ public class OrderRepository {
 
     public List<Order> findAll(OrderSearch orderSearch) {
         return em.createQuery("select o from Order o join o.member m" +
-                "where o.status = :status" +
-                "and m.name like :name", Order.class)
+                " where o.status = :status" +
+                " and m.name like :name", Order.class)
                 .setParameter("status", orderSearch.getOrderStatus())
                 .setParameter("name", orderSearch.getMemberName())
                 .setMaxResults(1000)//최대 1000건
@@ -114,5 +114,34 @@ public class OrderRepository {
                         " from Order o" +
                         " join o.member m" +
                         " join o.delivery d", OrderSimpleQueryDto.class).getResultList();
+    }
+
+
+    public List<Order> findAllWithItem() {
+        //JPA 에서 distinct는 레퍼런스값의 중복을 제거하는 것
+        // 1. DB에 distinct 키워드를 날려줌
+        // 2. entity가 중복인 경우 중복을 걸러서 컬렉션에(리스트에) 담아준다!
+        //데이터베이스에서 distinct는 전부 중복일 때 제거
+        return em.createQuery(
+                "select distinct o from Order o" +
+                " join fetch o.member m" +
+                " join fetch o.delivery d" +
+                " join fetch o.orderItems oi" +
+                " join fetch oi.item i", Order.class)
+                //오류로그가 뜸
+                //2021-02-21 15:16:05.454  WARN 26272 --- [nio-8080-exec-1] o.h.h.internal.ast.QueryTranslatorImpl   : HHH000104: firstResult/maxResults specified with collection fetch; applying in memory!
+                //전부 메모리에서 올려서 메모리에서 정렬한다는 뜻....
+                //.setFirstResult(1).setMaxResults(100)
+                .getResultList();
+    }
+
+    public List<Order> findAllWithMemberDelivery(int offset, int limit) {
+        return em.createQuery(
+                "select o from Order o" +
+                        " join fetch o.member m" +
+                        " join fetch o.delivery d", Order.class)
+                .setFirstResult(offset)
+                .setMaxResults(limit)
+                .getResultList();
     }
 }
